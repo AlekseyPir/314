@@ -1,0 +1,73 @@
+import timeit
+from itertools import combinations
+# Список десертов
+desserts = ['торт', 'мороженое', 'пирог', 'брауни', 'пудинг', 'кексы', 'пирожные', 'фрукты', 'шоколад', 'печенье']
+
+# Цены на десерты
+dessert_prices = {
+    'торт': 300,
+    'мороженое': 150,
+    'пирог': 200,
+    'брауни': 180,
+    'пудинг': 120,
+    'кексы': 80,
+    'пирожные': 250,
+    'фрукты': 100,
+    'шоколад': 220,
+    'печенье': 70
+}
+
+# Часть 2: Усложнение программы с фильтрацией
+
+PRICE_LIMIT = 600
+
+def filter_combinations_by_price(combos, price_limit):
+    filtered = []
+    for combo in combos:
+        total_price = sum(dessert_prices[d] for d in combo)
+        if total_price <= price_limit:
+            filtered.append(combo)
+    return filtered
+
+# Вариант 1: Алгоритмический подход с фильтрацией
+def generate_combinations_algorithmic_filtered(desserts, r, price_limit):
+    results = []
+    n = len(desserts)
+    for i in range(n):
+        for j in range(i + 1, n):
+            for k in range(j + 1, n):
+                combo = (desserts[i], desserts[j], desserts[k])
+                total_price = sum(dessert_prices[d] for d in combo)
+                if total_price <= price_limit:
+                    results.append(combo)
+    return results
+
+# Время выполнения алгоритмического с фильтрацией
+start_time_algorithmic_filtered = timeit.default_timer()
+algorithmic_combinations_filtered = generate_combinations_algorithmic_filtered(desserts, 3, PRICE_LIMIT)
+end_time_algorithmic_filtered = timeit.default_timer()
+
+print("Алгоритмический подход с фильтрацией:")
+for combo in algorithmic_combinations_filtered:
+    total_price = sum(dessert_prices[d] for d in combo)
+    print(f"{combo} - Общая цена: {total_price}")
+print(f"Время выполнения (алгоритмический с фильтрацией): {end_time_algorithmic_filtered - start_time_algorithmic_filtered:.6f} секунд\n")
+
+# Вариант 2: Использование встроенной функции Python с фильтрацией
+def generate_combinations_python_filtered(desserts, r, price_limit):
+    all_combos = list(combinations(desserts, r))
+    return [
+        combo for combo in all_combos
+        if sum(dessert_prices[d] for d in combo) <= price_limit
+    ]
+
+# Время выполнения функции Python с фильтрацией
+start_time_python_filtered = timeit.default_timer()
+python_combinations_filtered = generate_combinations_python_filtered(desserts, 3, PRICE_LIMIT)
+end_time_python_filtered = timeit.default_timer()
+
+print("Подход с использованием функций Python с фильтрацией:")
+for combo in python_combinations_filtered:
+    total_price = sum(dessert_prices[d] for d in combo)
+    print(f"{combo} - Общая цена: {total_price}")
+print(f"Время выполнения (Python функции с фильтрацией): {end_time_python_filtered - start_time_python_filtered:.6f} секунд")
