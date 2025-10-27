@@ -1,0 +1,121 @@
+import tkinter as tk
+from tkinter import messagebox
+
+main_window = tk.Tk()
+game_board = [' ' for _ in range(9)]
+active_player = 'X'
+board_buttons = []
+
+def setup_board():
+    main_window.title("Крестики-нолики")
+    for row_index in range(3):
+        for col_index in range(3):
+            cell_index = 3 * row_index + col_index
+            button = tk.Button(main_window, text='', font=('Arial', 20), width=5, height=2,
+                             command=lambda idx=cell_index: handle_player_move(idx))
+            button.grid(row=row_index, column=col_index)
+            board_buttons.append(button)
+
+def handle_player_move(index):
+    global active_player
+
+    if game_board[index] == ' ' and active_player == 'X':
+        game_board[index] = 'X'
+        board_buttons[index].config(text='X', state='disabled')
+
+        if not check_game_end():
+            active_player = 'O'
+            computer_turn()
+
+def computer_turn():
+    global active_player
+    best_score = float('-inf')
+    best_move_index = None
+
+    for i in range(9):
+        if game_board[i] == ' ':
+            game_board[i] = 'O'
+            current_score = minimax_algorithm(game_board, 0, False)
+            game_board[i] = ' '
+
+            if current_score > best_score:
+                best_score = current_score
+                best_move_index = i
+
+    if best_move_index is not None:
+        game_board[best_move_index] = 'O'
+        board_buttons[best_move_index].config(text='O', state='disabled')
+
+        check_game_end()
+
+        active_player = 'X'
+
+def minimax_algorithm(current_board_state, depth, is_maximizing_player):
+    scores = {'X': -1, 'O': 1, 'tie': 0}
+    game_result = evaluate_game_state(current_board_state)
+
+    if game_result:
+        return scores[game_result]
+
+    if is_maximizing_player:
+        max_eval = float('-inf')
+        for i in range(9):
+            if current_board_state[i] == ' ':
+                current_board_state[i] = 'O'
+                eval = minimax_algorithm(current_board_state, depth + 1, False)
+                current_board_state[i] = ' '
+                max_eval = max(eval, max_eval)
+        return max_eval
+    else:
+        min_eval = float('inf')
+        for i in range(9):
+            if current_board_state[i] == ' ':
+                current_board_state[i] = 'X'
+                eval = minimax_algorithm(current_board_state, depth + 1, True)
+                current_board_state[i] = ' '
+                min_eval = min(eval, min_eval)
+        return min_eval
+
+def evaluate_game_state(board_to_evaluate):
+    for i in range(0, 9, 3):
+        if board_to_evaluate[i] == board_to_evaluate[i+1] == board_to_evaluate[i+2] != ' ':
+            return board_to_evaluate[i]
+    for i in range(3):
+        if board_to_evaluate[i] == board_to_evaluate[i+3] == board_to_evaluate[i+6] != ' ':
+            return board_to_evaluate[i]
+    if board_to_evaluate[0] == board_to_evaluate[4] == board_to_evaluate[8] != ' ':
+        return board_to_evaluate[0]
+    if board_to_evaluate[2] == board_to_evaluate[4] == board_to_evaluate[6] != ' ':
+        return board_to_evaluate[2]
+    if ' ' not in board_to_evaluate:
+        return 'tie'
+    return None
+
+def check_game_end():
+    game_result = evaluate_game_state(game_board)
+    if game_result == 'X':
+        messagebox.showinfo("Результат", "Вы победили!")
+        restart_game()
+        return True
+    elif game_result == 'O':
+        messagebox.showinfo("Результат", "Бот победил!")
+        restart_game()
+        return True
+    elif game_result == 'tie':
+        messagebox.showinfo("Результат", "Игра закончилась вничью!")
+        restart_game()
+        return True
+    return False
+
+def restart_game():
+    global game_board, active_player
+    game_board = [' ' for _ in range(9)]
+    active_player = 'X'
+    for button in board_buttons:
+        button.config(text='', state='normal')
+
+def run_game():
+    setup_board()
+    main_window.mainloop()
+if __name__ == "__main__":
+    run_game()
