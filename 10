@@ -1,113 +1,121 @@
 import tkinter as tk
 from tkinter import messagebox
-okno = tk.Tk()
-board = [' ' for i in range(9)]
-current_player = 'X'
-buttons = []
-def create_board():
-    """Создание игрового поля"""
-    okno.title("Крестики-нолики")
-    for i in range(3):
-        for j in range(3):
-            index = 3 * i + j
-            button = tk.Button(okno, text='', font=('Arial', 20), width=5, height=2,
-                             command=lambda idx=index: make_move(idx))
-            button.grid(row=i, column=j)
-            buttons.append(button)
-def make_move(index):
-    """Ход игрока"""
-    global current_player
-    
-    if board[index] == ' ' and current_player == 'X':
-        board[index] = 'X'
-        buttons[index].config(text='X', state='disabled')
-        
-        if not check_winner():
-            current_player = 'O'
-            bot_move()
-def bot_move():
-    """Ход бота"""
-    global current_player
+
+main_window = tk.Tk()
+game_board = [' ' for _ in range(9)]
+active_player = 'X'
+board_buttons = []
+
+def setup_board():
+    main_window.title("Крестики-нолики")
+    for row_index in range(3):
+        for col_index in range(3):
+            cell_index = 3 * row_index + col_index
+            button = tk.Button(main_window, text='', font=('Arial', 20), width=5, height=2,
+                             command=lambda idx=cell_index: handle_player_move(idx))
+            button.grid(row=row_index, column=col_index)
+            board_buttons.append(button)
+
+def handle_player_move(index):
+    global active_player
+
+    if game_board[index] == ' ' and active_player == 'X':
+        game_board[index] = 'X'
+        board_buttons[index].config(text='X', state='disabled')
+
+        if not check_game_end():
+            active_player = 'O'
+            computer_turn()
+
+def computer_turn():
+    global active_player
     best_score = float('-inf')
-    best_move = None
+    best_move_index = None
+
     for i in range(9):
-        if board[i] == ' ':
-            board[i] = 'O'
-            score = minimax(board, 0, False)
-            board[i] = ' '
-            if score > best_score:
-                best_score = score
-                best_move = i
-    if best_move is not None:
-        board[best_move] = 'O'
-        buttons[best_move].config(text='O', state='disabled')
-        check_winner()
-        current_player = 'X'
-def minimax(board, depth, is_maximizing):
-    """Алгоритм минимакс для поиска лучшего хода"""
+        if game_board[i] == ' ':
+            game_board[i] = 'O'
+            current_score = minimax_algorithm(game_board, 0, False)
+            game_board[i] = ' '
+
+            if current_score > best_score:
+                best_score = current_score
+                best_move_index = i
+
+    if best_move_index is not None:
+        game_board[best_move_index] = 'O'
+        board_buttons[best_move_index].config(text='O', state='disabled')
+
+        check_game_end()
+
+        active_player = 'X'
+
+def minimax_algorithm(current_board_state, depth, is_maximizing_player):
     scores = {'X': -1, 'O': 1, 'tie': 0}
-    winner = check_winner_minimax(board)
-    if winner:
-        return scores[winner]
-    if is_maximizing:
-        best_score = float('-inf')
+    game_result = evaluate_game_state(current_board_state)
+
+    if game_result:
+        return scores[game_result]
+
+    if is_maximizing_player:
+        max_eval = float('-inf')
         for i in range(9):
-            if board[i] == ' ':
-                board[i] = 'O'
-                score = minimax(board, depth + 1, False)
-                board[i] = ' '
-                best_score = max(score, best_score)
-        return best_score
+            if current_board_state[i] == ' ':
+                current_board_state[i] = 'O'
+                eval = minimax_algorithm(current_board_state, depth + 1, False)
+                current_board_state[i] = ' '
+                max_eval = max(eval, max_eval)
+        return max_eval
     else:
-        best_score = float('inf')
+        min_eval = float('inf')
         for i in range(9):
-            if board[i] == ' ':
-                board[i] = 'X'
-                score = minimax(board, depth + 1, True)
-                board[i] = ' '
-                best_score = min(score, best_score)
-        return best_score
-def check_winner_minimax(board):
-    """Проверка победителя для алгоритма минимакс"""
+            if current_board_state[i] == ' ':
+                current_board_state[i] = 'X'
+                eval = minimax_algorithm(current_board_state, depth + 1, True)
+                current_board_state[i] = ' '
+                min_eval = min(eval, min_eval)
+        return min_eval
+
+def evaluate_game_state(board_to_evaluate):
     for i in range(0, 9, 3):
-        if board[i] == board[i+1] == board[i+2] != ' ':
-            return board[i]
+        if board_to_evaluate[i] == board_to_evaluate[i+1] == board_to_evaluate[i+2] != ' ':
+            return board_to_evaluate[i]
     for i in range(3):
-        if board[i] == board[i+3] == board[i+6] != ' ':
-            return board[i]
-    if board[0] == board[4] == board[8] != ' ':
-        return board[0]
-    if board[2] == board[4] == board[6] != ' ':
-        return board[2]
-    if ' ' not in board:
+        if board_to_evaluate[i] == board_to_evaluate[i+3] == board_to_evaluate[i+6] != ' ':
+            return board_to_evaluate[i]
+    if board_to_evaluate[0] == board_to_evaluate[4] == board_to_evaluate[8] != ' ':
+        return board_to_evaluate[0]
+    if board_to_evaluate[2] == board_to_evaluate[4] == board_to_evaluate[6] != ' ':
+        return board_to_evaluate[2]
+    if ' ' not in board_to_evaluate:
         return 'tie'
     return None
-def check_winner():
-    """Проверка победителя в основной игре"""
-    winner = check_winner_minimax(board)
-    if winner == 'X':
-        messagebox.showinfo("Победа!", "Вы победили!")
-        reset_game()
+
+def check_game_end():
+    game_result = evaluate_game_state(game_board)
+    if game_result == 'X':
+        messagebox.showinfo("Результат", "Вы победили!")
+        restart_game()
         return True
-    elif winner == 'O':
-        messagebox.showinfo("Поражение", "Бот победил!")
-        reset_game()
+    elif game_result == 'O':
+        messagebox.showinfo("Результат", "Бот победил!")
+        restart_game()
         return True
-    elif winner == 'tie':
-        messagebox.showinfo("Ничья", "Игра закончилась вничью!")
-        reset_game()
+    elif game_result == 'tie':
+        messagebox.showinfo("Результат", "Игра закончилась вничью!")
+        restart_game()
         return True
     return False
-def reset_game():
-    """Сброс игры"""
-    global board, current_player
-    board = [' ' for i in range(9)]
-    current_player = 'X'
-    for button in buttons:
+
+def restart_game():
+    global game_board, active_player
+    game_board = [' ' for _ in range(9)]
+    active_player = 'X'
+    for button in board_buttons:
         button.config(text='', state='normal')
-def main():
-    """Основная функция"""
-    create_board()
-    okno.mainloop()
+
+def run_game():
+    setup_board()
+    main_window.mainloop()
 if __name__ == "__main__":
-    main()
+    run_game()
